@@ -350,7 +350,7 @@ canvas.addEventListener('touchmove',e=>{
     const dy=touchStartY-e.touches[0].clientY;
     touchStartY=e.touches[0].clientY;
     if(!game.letterScrollTarget) game.letterScrollTarget=0;
-    game.letterScrollTarget+=dy*0.8;
+    game.letterScrollTarget-=dy*0.8;
     if(game.letterScrollTarget<0) game.letterScrollTarget=0;
   }
 },{passive:false});
@@ -1227,8 +1227,6 @@ const LETTER_TEXT=`Мои дорогие, я вас от всего сердца
 Тьфу тьфу тьфу! Какое же счастье!
 
 Хочется передать вам скромный подарок, вам родителям виднее, что нужно малышу.
-
-Мне бы только хотелось, чтобы что-то символическое осталось на память 🙂
 
 С нетерпением жду нашей встречи, очень хочу познакомиться с вами в качестве родителей и с вашим сыночком Пивоваровичем.
 
