@@ -205,32 +205,30 @@ const GROUND_Y = 275;
 function getLevelItems(lvl){
   const items = [];
   const spacing = 120;
-  if(lvl===0){ // Moscow - rings, bouquets, hearts, car - all BEFORE tank zone
-    items.push({type:'bouquet',x:200,y:170,collected:false});
-    items.push({type:'bouquet',x:400,y:160,collected:false});
-    items.push({type:'bouquet',x:600,y:170,collected:false});
-    items.push({type:'ring',x:800,y:180,collected:false});
-    for(let i=0;i<6;i++) items.push({type:'heart',x:850+i*80,y:180+Math.sin(i)*25,collected:false});
-    items.push({type:'car',x:1400,y:220,collected:false});
-  } else if(lvl===1){ // Armenia - spread items across full level
-    // Hearts
-    for(let i=0;i<4;i++) items.push({type:'heart',x:150+i*80,y:180+Math.sin(i*1.5)*25,collected:false});
-    // Badges
-    items.push({type:'badge',x:500,y:160,text:'500 РЕЗЮМЕ',collected:false});
-    items.push({type:'badge',x:700,y:150,text:'НОВАЯ\nПРОФЕССИЯ',collected:false});
-    // More hearts + pomegranates spread out
-    for(let i=0;i<6;i++) items.push({type:'heart',x:800+i*100,y:180+Math.sin(i)*25,collected:false});
-    for(let i=0;i<5;i++) items.push({type:'pomegranate',x:900+i*120,y:190+Math.sin(i)*20,collected:false});
-    // Even more hearts toward the end
-    for(let i=0;i<4;i++) items.push({type:'heart',x:1500+i*60,y:180+Math.sin(i)*20,collected:false});
-  } else if(lvl===2){ // Uruguay - hearts within jump reach!
-    for(let i=0;i<12;i++) items.push({type:'heart',x:180+i*100,y:200+Math.sin(i*0.8)*20,collected:false});
-    items.push({type:'money',x:400,y:200,collected:false});
-    items.push({type:'money',x:800,y:210,collected:false});
-    items.push({type:'money',x:1100,y:195,collected:false});
-    items.push({type:'badge',x:600,y:190,text:'НОВЫЕ\nДРУЗЬЯ',collected:false});
-    items.push({type:'house',x:900,y:220,collected:false});
-    items.push({type:'car',x:1300,y:220,collected:false});
+  if(lvl===0){ // Moscow - spread across longer level
+    items.push({type:'bouquet',x:200,y:200,collected:false});
+    items.push({type:'bouquet',x:500,y:190,collected:false});
+    items.push({type:'bouquet',x:800,y:200,collected:false});
+    items.push({type:'ring',x:1100,y:200,collected:false});
+    for(let i=0;i<10;i++) items.push({type:'heart',x:300+i*150,y:210+Math.sin(i)*15,collected:false});
+    items.push({type:'car',x:2200,y:230,collected:false});
+    // Extra hearts after car
+    for(let i=0;i<6;i++) items.push({type:'heart',x:2300+i*80,y:210+Math.sin(i)*15,collected:false});
+  } else if(lvl===1){ // Armenia - spread across longer level
+    for(let i=0;i<6;i++) items.push({type:'heart',x:150+i*120,y:210+Math.sin(i*1.5)*15,collected:false});
+    items.push({type:'badge',x:900,y:190,text:'500 РЕЗЮМЕ',collected:false});
+    items.push({type:'badge',x:1200,y:180,text:'НОВАЯ\nПРОФЕССИЯ',collected:false});
+    for(let i=0;i<8;i++) items.push({type:'heart',x:1000+i*150,y:210+Math.sin(i)*15,collected:false});
+    for(let i=0;i<6;i++) items.push({type:'pomegranate',x:1300+i*150,y:220+Math.sin(i)*15,collected:false});
+    for(let i=0;i<6;i++) items.push({type:'heart',x:2200+i*100,y:210+Math.sin(i)*15,collected:false});
+  } else if(lvl===2){ // Uruguay - many hearts, LOW (jump reach), full level
+    for(let i=0;i<20;i++) items.push({type:'heart',x:180+i*130,y:220+Math.sin(i*0.8)*12,collected:false});
+    items.push({type:'money',x:500,y:220,collected:false});
+    items.push({type:'money',x:1200,y:225,collected:false});
+    items.push({type:'money',x:1900,y:220,collected:false});
+    items.push({type:'badge',x:800,y:210,text:'НОВЫЕ\nДРУЗЬЯ',collected:false});
+    items.push({type:'house',x:1500,y:230,collected:false});
+    items.push({type:'car',x:2200,y:230,collected:false});
   }
   return items;
 }
@@ -245,17 +243,17 @@ let tank = null;
 let fireballs = [];
 function spawnTank(lvl){
   if(lvl===1){
-    // Armenia: BIGGER boss well past all items
-    tank = {x:1800, y:GROUND_Y-40, w:130, h:80, alive:true, speed:0.15, hp:12, maxHp:12};
+    // Armenia: BIGGER boss at end of longer level
+    tank = {x:2900, y:GROUND_Y-40, w:130, h:80, alive:true, speed:0.15, hp:12, maxHp:12};
   }else{
-    // Moscow boss - well past the car (car at 1400, tank at 1800)
-    tank = {x:1800, y:GROUND_Y-30, w:100, h:60, alive:true, speed:0.15, hp:10, maxHp:10};
+    // Moscow boss - at end of longer level
+    tank = {x:2900, y:GROUND_Y-30, w:100, h:60, alive:true, speed:0.15, hp:10, maxHp:10};
   }
   fireballs=[];
 }
 
 // Level config
-const LEVEL_DIST = [2000, 2000, 2000]; // scroll distance per level
+const LEVEL_DIST = [3200, 3200, 3200]; // 1.6x longer levels
 const LEVEL_NAMES = ['МОСКВА 🇷🇺','АРМЕНИЯ 🇦🇲','УРУГВАЙ 🇺🇾','ФИНАЛ 🎉'];
 const LEVEL_BG = ['bg_moscow','bg_armenia','bg_uruguay',null];
 const LEVEL_CHARS = [
@@ -453,8 +451,8 @@ let heartCenterAnim={active:false,timer:0,phase:'moving',taps:0,maxTaps:25}; // 
 function drawBG(key, scrollX){
   if(!images[key]) return;
   const img=images[key];
-  // Scale to fill height up to ground, maintain aspect ratio
-  const drawH=GROUND_Y+5;
+  // Draw at full image height (may extend below ground - that's OK, ground covers it)
+  const drawH=320;
   const scale=drawH/(img.naturalHeight||320);
   const w=img.naturalWidth*scale;
   ctx.imageSmoothingEnabled=true;
@@ -513,7 +511,7 @@ function drawAirplaneScene(dt){
     if(game.planeY<40) {game.planeY=40;game.planeVY=0;}
     if(game.planeY>280) game.planeY=280;
   }
-  const progress=Math.min(1,game.airplaneTimer/6);
+  const progress=Math.min(1,game.airplaneTimer/18);
   
   // Crash detection
   if(game.planeY>260 && !game.planeCrash){
@@ -614,7 +612,7 @@ function drawAirplaneScene(dt){
   }
   
   // Transition after 6 seconds of flight
-  if(game.airplaneTimer>=6 && !game.planeCrash){
+  if(game.airplaneTimer>=18 && !game.planeCrash){
     game.state='transition';
     game.transitionTimer=2;
     game.transitionText=LEVEL_NAMES[game.level];
@@ -683,8 +681,8 @@ function updateAndDrawLevel(dt){
   // Tank boss blocks forward progress until destroyed
   if(tank && tank.alive && (game.level===0||game.level===1)){
     const tankScreenX=tank.x-game.scrollX+60;
-    const allCollected=levelItems.every(i=>i.collected||i.type==='airplane_pickup');
-    if(allCollected && tankScreenX<200) game.scrollX=tank.x+60-200;
+    // Block scrolling when tank is visible on screen
+    if(tankScreenX<250) game.scrollX=tank.x+60-250;
   }
 
   // Background
@@ -715,10 +713,10 @@ function updateAndDrawLevel(dt){
   // Jump
   if(jumpQueued && player.onGround){
     // Fireballs ONLY when: tank alive + on screen + all items collected
-    const allItemsCollected=levelItems.every(i=>i.collected||i.type==='airplane_pickup');
-    if(tank && tank.alive && (game.level===0||game.level===1) && allItemsCollected){
+    // Fire when tank is on screen - no need to collect everything first
+    if(tank && tank.alive && (game.level===0||game.level===1)){
       const tx=tank.x-game.scrollX+60;
-      if(tx<500 && tx>50){
+      if(tx<480 && tx>30){
         fireballs.push({x:player.x+20,y:GROUND_Y-50,vx:7,targetX:tx});
         if(audioCtx) playNote(600,0,0.05,'square',0.04);
       }else{
