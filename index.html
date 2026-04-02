@@ -314,9 +314,9 @@ function onInput(){
     return;
   }
   if(game.state==='finale'){
-    // tap to scroll down smoothly
+    // tap to scroll down smoothly (swipe handled separately)
     if(!game.letterScrollTarget) game.letterScrollTarget=0;
-    game.letterScrollTarget+=50;
+    game.letterScrollTarget+=30;
     return;
   }
   if(game.state==='airplane'){
@@ -338,7 +338,26 @@ function onInput(){
 }
 document.addEventListener('keydown',e=>{if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();onInput();}});
 canvas.addEventListener('click',onInput);
-canvas.addEventListener('touchstart',e=>{e.preventDefault();onInput();},{passive:false});
+let touchStartY=0;
+canvas.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  touchStartY=e.touches[0].clientY;
+  if(game.state!=='finale') onInput();
+},{passive:false});
+canvas.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  if(game.state==='finale'){
+    const dy=touchStartY-e.touches[0].clientY;
+    touchStartY=e.touches[0].clientY;
+    if(!game.letterScrollTarget) game.letterScrollTarget=0;
+    game.letterScrollTarget+=dy*0.8;
+    if(game.letterScrollTarget<0) game.letterScrollTarget=0;
+  }
+},{passive:false});
+canvas.addEventListener('touchend',e=>{
+  e.preventDefault();
+  if(game.state==='finale') return; // don't fire onInput for swipe
+},{passive:false});
 
 // Draw helpers
 function drawHeart(x,y,size,color){
@@ -1302,8 +1321,10 @@ function drawFinale(dt){
   // Smooth ease to target scroll position
   if(!game.letterScrollTarget) game.letterScrollTarget=0;
   game.letterScroll+=(game.letterScrollTarget-game.letterScroll)*0.15;
-  if(game.letterScroll>maxScroll) game.letterScroll=maxScroll;
+  if(game.letterScrollTarget<0) game.letterScrollTarget=0;
   if(game.letterScrollTarget>maxScroll) game.letterScrollTarget=maxScroll;
+  if(game.letterScroll<0) game.letterScroll=0;
+  if(game.letterScroll>maxScroll) game.letterScroll=maxScroll;
   
   // Draw lines
   ctx.save();
@@ -1324,39 +1345,22 @@ function drawFinale(dt){
     }
     game.celebrationTimer+=dt;
     
-    // Big "ПОЗДРАВЛЯЮ!!!" text
+    // Confetti + sound — ONLY in ground area (below letter box)
     if(game.celebrationTimer>1){
-      const pulse=1+Math.sin(game.time*5)*0.1;
-      ctx.save();ctx.translate(240,GROUND_Y-30);ctx.scale(pulse,pulse);
-      ctx.fillStyle='#ffd700';ctx.font='bold 14px "Press Start 2P"';ctx.textAlign='center';
-      ctx.fillText('ПОЗДРАВЛЯЮ!!! 🎉',0,0);
-      ctx.restore();
-      
-      // Confetti burst every 3 seconds with "yay!" sound
       if(!game.confettiTimer) game.confettiTimer=0;
       game.confettiTimer+=dt;
       if(game.confettiTimer>=3){
         game.confettiTimer=0;
-        for(let c=0;c<8;c++){
-          spawnParticles(Math.random()*480,Math.random()*150,'#ff2255',3,5);
-          spawnParticles(Math.random()*480,Math.random()*150,'#ffdd44',3,4);
-          spawnParticles(Math.random()*480,Math.random()*150,'#44ddff',2,4);
-          spawnParticles(Math.random()*480,Math.random()*150,'#44ff44',2,3);
+        // Sparkles only around characters (below letter)
+        for(let c=0;c<6;c++){
+          spawnParticles(100+Math.random()*280,GROUND_Y-20-Math.random()*30,'#ff2255',2,3);
+          spawnParticles(100+Math.random()*280,GROUND_Y-20-Math.random()*30,'#ffdd44',2,3);
+          spawnParticles(100+Math.random()*280,GROUND_Y-20-Math.random()*30,'#44ddff',2,2);
         }
-        // "Yay!" sound - ascending cheerful notes
         if(audioCtx){
           playNote(523,0,0.1,'square',0.05);playNote(659,0.1,0.1,'square',0.05);
           playNote(784,0.2,0.1,'square',0.05);playNote(1047,0.3,0.2,'square',0.06);
         }
-      }
-      // Continuous fireworks + hearts - LOTS!
-      if(Math.random()<0.35){
-        const fx=50+Math.random()*380,fy=20+Math.random()*100;
-        const colors=['#ff4466','#44ff88','#4488ff','#ffdd44','#ff88ff'];
-        spawnParticles(fx,fy,colors[Math.floor(Math.random()*colors.length)],4,5);
-      }
-      if(Math.random()<0.1){
-        spawnParticles(Math.random()*480,Math.random()*150,'#ff2255',2,3);
       }
     }
   }
