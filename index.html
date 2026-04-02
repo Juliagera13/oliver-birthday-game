@@ -274,9 +274,10 @@ function onInput(){
     return;
   }
   if(game.state==='finale'){
-    // advance dialog
-    if(game.dialogIndex < 3) { game.dialogIndex++; game.dialogTimer=0; }
-    else if(!game.showCoupon) { game.showCoupon=true; }
+    // tap to speed up letter or show all
+    if(letterChars<LETTER_TEXT.length){
+      letterChars=LETTER_TEXT.length; // show all text instantly on tap
+    }
     return;
   }
   if(game.state==='airplane'){
@@ -1109,11 +1110,31 @@ function updateAndDrawLevel(dt){
 }
 
 // ============ FINALE ============
-const DIALOGS=[
-  'Вы — пример любви и красоты!',
-  'Голубочки, спасибо что вы вместе 💕',
-  'Тётя Джулия приедет познакомиться!'
-];
+const LETTER_TEXT=`Мои дорогие, я вас от всего сердца поздравляю!
+
+Много радостей и трудностей было на вашем пути, но ваша любовь росла и крепчала.
+
+Из этой вашей огромной любви на свет появился самый чудесный малыш Оливер.
+
+Вы лучшие родители о которых можно только мечтать, а Оливер самая сладкая вкусная булочка из возможных.
+
+Вы - пример и путеводная звезда для меня.
+
+Родительство - какое глубокое и насыщенное и расширяющее все возможные грани путешествие!
+
+Берите все от каждого момента и обязательно делитесь опытом и родительской мудростью 💕
+
+Тьфу тьфу тьфу! Какое же счастье!
+
+Хочется передать вам скромный подарок, вам родителям виднее, что нужно малышу.
+
+Мне бы только хотелось, чтобы что-то символическое осталось на память 🙂
+
+С нетерпением жду нашей встречи, очень хочу познакомиться с вами в качестве родителей и с вашим сыночком Пивоваровичем.
+
+Целую! Обнимаю!
+Ваша тетя Джулия ❤️`;
+let letterChars=0;
 
 function drawFinale(dt){
   // Dark starry sky
@@ -1143,58 +1164,52 @@ function drawFinale(dt){
   // Finale music (gentle)
   if(game.finaleStep===0){
     game.finaleStep=1;
+    letterChars=0;
     if(audioCtx){
       const mel=[[N.C4,0,1],[N.E4,1,1],[N.G4,2,1],[N.C5,3,2],[N.G4,5,1],[N.E4,6,1],[N.C4,7,2]];
       playMelodyLoop(mel,80,'triangle');
     }
   }
 
-  // Dialogs (Undertale style)
-  game.dialogTimer+=dt;
-  if(game.dialogTimer>3.5 && game.dialogIndex<3) { game.dialogIndex++; game.dialogTimer=0; }
+  // Typewriter letter - fast word-by-word
+  letterChars+=dt*40; // ~40 chars per second
+  const shownText=LETTER_TEXT.substring(0,Math.floor(letterChars));
+  
+  // Letter background
+  ctx.fillStyle='rgba(10,5,30,0.85)';
+  roundRect(20,10,440,255,8);
+  ctx.strokeStyle='#ffd700';ctx.lineWidth=2;
+  ctx.strokeRect(22,12,436,251);
 
-  if(game.dialogIndex<3 && !game.showCoupon){
-    // dialog box
-    ctx.fillStyle='#000';ctx.strokeStyle='#fff';ctx.lineWidth=2;
-    roundRect(30,20,420,60,6);ctx.stroke();
-    ctx.fillStyle='#fff';ctx.font='9px "Press Start 2P"';ctx.textAlign='center';
-    // typewriter effect
-    const txt=DIALOGS[game.dialogIndex];
-    const chars=Math.floor(game.dialogTimer*15);
-    ctx.fillText(txt.substring(0,chars),240,55);
+  // Draw the text with word wrap
+  ctx.fillStyle='#fff';ctx.font='7px "Press Start 2P"';ctx.textAlign='left';
+  const maxW=410;
+  const lineH=12;
+  const words=shownText.split(' ');
+  let line='';
+  let ty=30;
+  // Scroll if text is too long
+  const totalLines=LETTER_TEXT.split('\n').length*1.5;
+  const scrollOffset=Math.max(0,(ty+Math.floor(letterChars/30)*lineH)-230);
+  
+  for(let w=0;w<words.length;w++){
+    const testLine=line+(line?' ':'')+words[w];
+    const metrics=ctx.measureText(testLine);
+    if(metrics.width>maxW||words[w].includes('\n')){
+      const drawY=ty-scrollOffset;
+      if(drawY>15 && drawY<260) ctx.fillText(line,35,drawY);
+      line=words[w].replace('\n','');
+      ty+=lineH;
+      if(words[w].includes('\n')) ty+=lineH*0.5; // extra space for paragraphs
+    }else{
+      line=testLine;
+    }
   }
-
-  // After dialogs, show coupon
-  if(game.dialogIndex>=3 && !game.showCoupon && game.dialogTimer>1){
-    game.showCoupon=true;
+  if(line){
+    const drawY=ty-scrollOffset;
+    if(drawY>15 && drawY<260) ctx.fillText(line,35,drawY);
   }
-
-  if(game.showCoupon){
-    game.couponY=Math.min(50, game.couponY+2);
-    const cy=game.couponY;
-    // golden border
-    ctx.fillStyle='#1a0a2e';
-    roundRect(60,cy,360,180,8);
-    ctx.strokeStyle='#ffd700';ctx.lineWidth=3;
-    ctx.strokeRect(63,cy+3,354,174);
-    ctx.strokeStyle='#ffec80';ctx.lineWidth=1;
-    ctx.strokeRect(68,cy+8,344,164);
-
-    ctx.textAlign='center';
-    ctx.fillStyle='#ffd700';ctx.font='10px "Press Start 2P"';
-    ctx.fillText('🎁 ПОДАРОЧНЫЙ КУПОН 🎁',240,cy+35);
-    
-    ctx.fillStyle='#ff4466';ctx.font='16px "Press Start 2P"';
-    ctx.fillText('ДЕНЬГИ!',240,cy+70);
-    
-    ctx.fillStyle='#fff';ctx.font='7px "Press Start 2P"';
-    ctx.fillText('Купите что-то для',240,cy+100);
-    ctx.fillText('малыша! 💰👶',240,cy+115);
-    
-    ctx.fillStyle='#ff88aa';ctx.font='8px "Press Start 2P"';
-    ctx.fillText('С любовью,',240,cy+145);
-    ctx.fillText('тётя Джулия ❤️',240,cy+162);
-  }
+  ctx.textAlign='center';
 
   // Characters ALWAYS drawn on top (after coupon)
   drawCharacter('victor_uruguay',180,GROUND_Y,game.time);
