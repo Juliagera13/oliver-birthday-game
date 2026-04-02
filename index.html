@@ -81,6 +81,7 @@ let audioCtx = null;
 let currentMelody = null;
 function initAudio(){
   if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  if(audioCtx.state==='suspended') audioCtx.resume();
 }
 
 function playNote(freq, start, dur, type='square', vol=0.08){
@@ -239,15 +240,15 @@ function getLevelItems(lvl){
     for(let i=0;i<6;i++) items.push({type:'pomegranate',x:1300+i*150,y:220+Math.sin(i)*15,collected:false});
     for(let i=0;i<6;i++) items.push({type:'heart',x:2200+i*100,y:210+Math.sin(i)*15,collected:false});
   } else if(lvl===2){ // Uruguay - many hearts, LOW (jump reach), full level
-    for(let i=0;i<20;i++) items.push({type:'heart',x:180+i*130,y:220+Math.sin(i*0.8)*12,collected:false});
-    items.push({type:'money',x:500,y:220,collected:false});
-    items.push({type:'money',x:1200,y:225,collected:false});
-    items.push({type:'money',x:1900,y:220,collected:false});
-    items.push({type:'badge',x:800,y:210,text:'НОВЫЕ\nДРУЗЬЯ',collected:false});
-    items.push({type:'house',x:1500,y:230,collected:false});
-    items.push({type:'car',x:2000,y:230,collected:false});
-    // More hearts after car, before big heart moment
-    for(let i=0;i<6;i++) items.push({type:'heart',x:2200+i*100,y:220+Math.sin(i)*10,collected:false});
+    for(let i=0;i<20;i++) items.push({type:'heart',x:180+i*130,y:200+Math.sin(i*0.8)*15,collected:false});
+    items.push({type:'money',x:500,y:200,collected:false});
+    items.push({type:'money',x:1200,y:205,collected:false});
+    items.push({type:'money',x:1900,y:200,collected:false});
+    items.push({type:'badge',x:800,y:195,text:'НОВЫЕ\nДРУЗЬЯ',collected:false});
+    items.push({type:'house',x:1500,y:210,collected:false});
+    items.push({type:'car',x:2000,y:210,collected:false});
+    // More hearts after car
+    for(let i=0;i<8;i++) items.push({type:'heart',x:2100+i*90,y:200+Math.sin(i)*15,collected:false});
   }
   return items;
 }
@@ -530,7 +531,7 @@ function drawAirplaneScene(dt){
     if(game.planeY<40) {game.planeY=40;game.planeVY=0;}
     if(game.planeY>280) game.planeY=280;
   }
-  const progress=Math.min(1,game.airplaneTimer/18);
+  const progress=Math.min(1,game.airplaneTimer/12);
   
   // Crash detection
   if(game.planeY>260 && !game.planeCrash){
@@ -631,7 +632,7 @@ function drawAirplaneScene(dt){
   }
   
   // Transition after 6 seconds of flight
-  if(game.airplaneTimer>=18 && !game.planeCrash){
+  if(game.airplaneTimer>=12 && !game.planeCrash){
     game.state='transition';
     game.transitionTimer=2;
     game.transitionText=LEVEL_NAMES[game.level];
@@ -880,6 +881,10 @@ function updateAndDrawLevel(dt){
         fireballs.splice(i,1);
         if(tank.hp<=0){
           tank.alive=false;fireballs=[];
+          // Spawn celebration hearts after tank death!
+          for(let i=0;i<8;i++){
+            levelItems.push({type:'heart',x:game.scrollX+100+i*50,y:200+Math.sin(i)*20,collected:false});
+          }
           startShake(1.0);
           // EXPLOSION
           spawnParticles(tx,GROUND_Y-20,'#ff6600',15,8);
@@ -955,7 +960,8 @@ function updateAndDrawLevel(dt){
   }
 
   // Trigger center animation on Uruguay when heart is big enough
-  if(game.level===2 && game.scrollX > LEVEL_DIST[2]*0.93 && !game.oliverBorn && !heartCenterAnim.active){
+  const allUruguayCollected=levelItems.every(i=>i.collected);
+  if(game.level===2 && allUruguayCollected && game.scrollX > LEVEL_DIST[2]*0.85 && !game.oliverBorn && !heartCenterAnim.active){
     heartCenterAnim.active=true;
     heartCenterAnim.timer=0;
     heartCenterAnim.phase='moving';
@@ -1102,7 +1108,11 @@ function updateAndDrawLevel(dt){
   ctx.fillStyle='#44ff44';
   ctx.fillRect(10,8,Math.min(1,game.scrollX/LEVEL_DIST[game.level])*100,6);
 
-  if(game.scrollX>=LEVEL_DIST[game.level]){
+  // For levels 0,1: end when tank is dead. For level 2: end by distance
+  const lvlDone = (game.level<=1) ? 
+    (tank && !tank.alive && levelItems.every(i=>i.collected)) :
+    (game.scrollX>=LEVEL_DIST[game.level]);
+  if(lvlDone){
     // CELEBRATION before next level! Salute + confetti
     for(let s=0;s<5;s++){
       const fx=80+Math.random()*320, fy=20+Math.random()*100;
