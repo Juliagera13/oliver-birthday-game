@@ -960,8 +960,9 @@ function updateAndDrawLevel(dt){
   }
 
   // Trigger center animation on Uruguay when heart is big enough
-  const allUruguayCollected=levelItems.every(i=>i.collected);
-  if(game.level===2 && allUruguayCollected && game.scrollX > LEVEL_DIST[2]*0.85 && !game.oliverBorn && !heartCenterAnim.active){
+  const allUruguayCollected=levelItems.filter(i=>!i.collected).length===0;
+  const anyVisibleOnScreen=levelItems.some(i=>!i.collected && (i.x-game.scrollX)>-50 && (i.x-game.scrollX)<530);
+  if(game.level===2 && allUruguayCollected && !anyVisibleOnScreen && !game.oliverBorn && !heartCenterAnim.active){
     heartCenterAnim.active=true;
     heartCenterAnim.timer=0;
     heartCenterAnim.phase='moving';
