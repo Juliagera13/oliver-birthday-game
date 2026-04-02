@@ -140,11 +140,16 @@ function playMelodyLoop(notes, bpm, type){
 
 // Moscow melody - bouncy C major march
 // Russian folk melody - Калинка / Korobeiniki style
+// Korobeiniki (Tetris theme) - Russian folk classic, 16 notes
 const moscowMelody = [
-  [N.E4,0,0.5],[N.D4,0.5,0.25],[N.C4,0.75,0.25],[N.D4,1,0.5],[N.E4,1.5,0.5],
-  [N.E4,2,0.5],[N.E4,2.5,0.5],[N.D4,3,0.5],[N.D4,3.5,0.5],
-  [N.E4,4,0.5],[N.G4,4.5,0.5],[N.G4,5,0.5],[N.G4,5.5,0.5],
-  [N.F4,6,0.5],[N.E4,6.5,0.25],[N.D4,6.75,0.25],[N.C4,7,1],
+  [N.E4,0,0.5],[N.B3,0.5,0.25],[N.C4,0.75,0.25],[N.D4,1,0.5],[N.C4,1.5,0.25],[N.B3,1.75,0.25],
+  [N.A3,2,0.5],[N.A3,2.5,0.25],[N.C4,2.75,0.25],[N.E4,3,0.5],[N.D4,3.5,0.25],[N.C4,3.75,0.25],
+  [N.B3,4,0.75],[N.C4,4.75,0.25],[N.D4,5,0.5],[N.E4,5.5,0.5],
+  [N.C4,6,0.5],[N.A3,6.5,0.5],[N.A3,7,0.5],[N.A3,7.5,0.5],
+  [N.D4,8,0.75],[N.F4,8.75,0.25],[N.A4,9,0.5],[N.G4,9.5,0.25],[N.F4,9.75,0.25],
+  [N.E4,10,0.75],[N.C4,10.75,0.25],[N.E4,11,0.5],[N.D4,11.5,0.25],[N.C4,11.75,0.25],
+  [N.B3,12,0.75],[N.C4,12.75,0.25],[N.D4,13,0.5],[N.E4,13.5,0.5],
+  [N.C4,14,0.5],[N.A3,14.5,0.5],[N.A3,15,1],
 ];
 // Armenian duduk melody - Dle Yaman inspired, haunting and soulful
 const armeniaMelody = [
@@ -317,6 +322,7 @@ function onInput(){
   }
   if(game.state==='airplane'){
     game.planeVY=-80;
+    if(audioCtx) playNote(440,0,0.06,'sine',0.04); // whoosh sound on tap
     return;
   }
   if(game.state==='playing'){
@@ -488,10 +494,10 @@ let heartCenterAnim={active:false,timer:0,phase:'moving',taps:0,maxTaps:25}; // 
 function drawBG(key, scrollX){
   if(!images[key]) return;
   const img=images[key];
-  // Draw at full image height (may extend below ground - that's OK, ground covers it)
+  // Draw at full canvas height, preserve aspect ratio
   const drawH=320;
-  const scale=drawH/(img.naturalHeight||320);
-  const w=img.naturalWidth*scale;
+  const imgAspect=(img.naturalWidth||960)/(img.naturalHeight||320);
+  const w=drawH*imgAspect; // maintains correct proportions
   ctx.imageSmoothingEnabled=true;
   // Scroll BG but clamp so the right edge never shows (no ugly seam)
   const maxOffset=-(w-480); // don't scroll past end of image
@@ -675,7 +681,7 @@ function drawTitle(){
   const blink=Math.sin(game.time*3)>0;
   if(blink) ctx.fillText('НАЖМИ ЧТОБЫ НАЧАТЬ',240,270);
   ctx.fillStyle='#aaa';ctx.font='7px "Press Start 2P"';
-  ctx.fillText('от тёти Джулии ❤️',240,300);
+  ctx.fillText('❤️',240,300);
 }
 
 function drawTransition(dt){
@@ -1211,7 +1217,9 @@ const LETTER_TEXT=`Мои дорогие, я вас от всего сердца
 С нетерпением жду нашей встречи, очень хочу познакомиться с вами в качестве родителей и с вашим сыночком Пивоваровичем.
 
 Целую! Обнимаю!
-Ваша тетя Джулия ❤️`;
+Ваша тетя Джулия ❤️
+
+(для передачи подарка мне потребуются либо ваши swift реквизиты чтобы принять перевод с революта на уру карту, либо российская карта чтобы принять перевод в рублях)`;
 let letterChars=0;
 
 function drawFinale(dt){
@@ -1239,18 +1247,18 @@ function drawFinale(dt){
   // Characters standing - drawn AFTER coupon so they appear on top
   // (moved to end of drawFinale)
 
-  // Finale music (gentle)
+  // Finale music (gentle & beautiful)
   if(game.finaleStep===0){
     game.finaleStep=1;
-    letterChars=0;
+    letterChars=LETTER_TEXT.length; // Show ALL text immediately
     if(audioCtx){
-      const mel=[[N.C4,0,1],[N.E4,1,1],[N.G4,2,1],[N.C5,3,2],[N.G4,5,1],[N.E4,6,1],[N.C4,7,2]];
-      playMelodyLoop(mel,80,'triangle');
+      const mel=[[N.C4,0,1.5],[N.E4,1.5,1],[N.G4,2.5,1],[N.C5,3.5,2],[N.B4,5.5,0.5],[N.A4,6,0.5],[N.G4,6.5,1.5],[N.E4,8,1],[N.C4,9,2]];
+      playMelodyLoop(mel,50,'sine'); // slow, sine = soft and beautiful
     }
   }
 
-  // Typewriter letter
-  letterChars+=dt*35;
+  // Text shown immediately
+  if(letterChars<LETTER_TEXT.length) letterChars+=dt*50;
   const charCount=Math.floor(letterChars);
   const shownText=LETTER_TEXT.substring(0,charCount);
   const letterDone=charCount>=LETTER_TEXT.length;
@@ -1320,8 +1328,8 @@ function drawFinale(dt){
       ctx.fillText('ПОЗДРАВЛЯЮ!!! 🎉',0,0);
       ctx.restore();
       
-      // Continuous fireworks + hearts
-      if(Math.random()<0.15){
+      // Continuous fireworks + hearts - LOTS!
+      if(Math.random()<0.35){
         const fx=50+Math.random()*380,fy=20+Math.random()*100;
         const colors=['#ff4466','#44ff88','#4488ff','#ffdd44','#ff88ff'];
         spawnParticles(fx,fy,colors[Math.floor(Math.random()*colors.length)],4,5);
