@@ -1199,49 +1199,92 @@ function drawFinale(dt){
     }
   }
 
-  // Typewriter letter - fast word-by-word
-  letterChars+=dt*40; // ~40 chars per second
-  const shownText=LETTER_TEXT.substring(0,Math.floor(letterChars));
+  // Typewriter letter
+  letterChars+=dt*35;
+  const charCount=Math.floor(letterChars);
+  const shownText=LETTER_TEXT.substring(0,charCount);
+  const letterDone=charCount>=LETTER_TEXT.length;
   
   // Letter background
-  ctx.fillStyle='rgba(10,5,30,0.85)';
-  roundRect(20,10,440,255,8);
+  ctx.fillStyle='rgba(10,5,30,0.9)';
+  roundRect(15,5,450,GROUND_Y-10,8);
   ctx.strokeStyle='#ffd700';ctx.lineWidth=2;
-  ctx.strokeRect(22,12,436,251);
+  ctx.strokeRect(17,7,446,GROUND_Y-14);
 
-  // Draw the text with word wrap
-  ctx.fillStyle='#fff';ctx.font='7px "Press Start 2P"';ctx.textAlign='left';
-  const maxW=410;
-  const lineH=12;
-  const words=shownText.split(' ');
-  let line='';
-  let ty=30;
-  // Scroll if text is too long
-  const totalLines=LETTER_TEXT.split('\n').length*1.5;
-  const scrollOffset=Math.max(0,(ty+Math.floor(letterChars/30)*lineH)-230);
+  // Draw text - use sans-serif for readability, larger
+  ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.textAlign='left';
+  const maxW=420;
+  const lineH=14;
   
-  for(let w=0;w<words.length;w++){
-    const testLine=line+(line?' ':'')+words[w];
-    const metrics=ctx.measureText(testLine);
-    if(metrics.width>maxW||words[w].includes('\n')){
-      const drawY=ty-scrollOffset;
-      if(drawY>15 && drawY<260) ctx.fillText(line,35,drawY);
-      line=words[w].replace('\n','');
-      ty+=lineH;
-      if(words[w].includes('\n')) ty+=lineH*0.5; // extra space for paragraphs
+  // Pre-calculate all lines
+  const allWords=shownText.split(' ');
+  const lines=[];
+  let curLine='';
+  for(let w=0;w<allWords.length;w++){
+    const word=allWords[w];
+    if(word.includes('\n')){
+      const parts=word.split('\n');
+      for(let p=0;p<parts.length;p++){
+        if(p>0){lines.push(curLine);lines.push('');curLine='';}
+        const test=curLine+(curLine?' ':'')+parts[p];
+        if(ctx.measureText(test).width>maxW){lines.push(curLine);curLine=parts[p];}
+        else curLine=test;
+      }
     }else{
-      line=testLine;
+      const test=curLine+(curLine?' ':'')+word;
+      if(ctx.measureText(test).width>maxW){lines.push(curLine);curLine=word;}
+      else curLine=test;
     }
   }
-  if(line){
-    const drawY=ty-scrollOffset;
-    if(drawY>15 && drawY<260) ctx.fillText(line,35,drawY);
+  if(curLine) lines.push(curLine);
+  
+  // Smooth scroll - only when text overflows visible area
+  const visibleLines=Math.floor((GROUND_Y-40)/lineH);
+  const scrollTarget=Math.max(0,(lines.length-visibleLines)*lineH);
+  if(!game.letterScroll) game.letterScroll=0;
+  game.letterScroll+=(scrollTarget-game.letterScroll)*0.05; // smooth ease
+  
+  // Draw lines
+  ctx.save();
+  ctx.beginPath();ctx.rect(15,15,450,GROUND_Y-30);ctx.clip();
+  for(let i=0;i<lines.length;i++){
+    const drawY=25+i*lineH-game.letterScroll;
+    if(drawY>10 && drawY<GROUND_Y-15) ctx.fillText(lines[i],30,drawY);
   }
+  ctx.restore();
   ctx.textAlign='center';
 
-  // Characters ALWAYS drawn on top (after coupon)
-  drawCharacter('victor_uruguay',180,GROUND_Y,game.time);
-  drawCharacter('tatiana_uruguay',260,GROUND_Y,game.time);
+  // After letter is done - show ПОЗДРАВЛЯЮ and celebration!
+  if(letterDone){
+    if(!game.celebrationStarted){
+      game.celebrationStarted=true;
+      game.celebrationTimer=0;
+    }
+    game.celebrationTimer+=dt;
+    
+    // Big "ПОЗДРАВЛЯЮ!!!" text
+    if(game.celebrationTimer>2){
+      const pulse=1+Math.sin(game.time*5)*0.1;
+      ctx.save();ctx.translate(240,GROUND_Y-30);ctx.scale(pulse,pulse);
+      ctx.fillStyle='#ffd700';ctx.font='bold 14px "Press Start 2P"';ctx.textAlign='center';
+      ctx.fillText('ПОЗДРАВЛЯЮ!!! 🎉',0,0);
+      ctx.restore();
+      
+      // Continuous fireworks + hearts
+      if(Math.random()<0.15){
+        const fx=50+Math.random()*380,fy=20+Math.random()*100;
+        const colors=['#ff4466','#44ff88','#4488ff','#ffdd44','#ff88ff'];
+        spawnParticles(fx,fy,colors[Math.floor(Math.random()*colors.length)],4,5);
+      }
+      if(Math.random()<0.1){
+        spawnParticles(Math.random()*480,Math.random()*150,'#ff2255',2,3);
+      }
+    }
+  }
+
+  // Characters
+  drawCharacter('victor_uruguay',160,GROUND_Y,game.time);
+  drawCharacter('tatiana_uruguay',280,GROUND_Y,game.time);
   drawOliver(220,GROUND_Y-5+Math.sin(game.time*3)*2,28);
 }
 
