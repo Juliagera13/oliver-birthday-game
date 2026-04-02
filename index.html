@@ -9,45 +9,41 @@
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;display:flex;align-items:center;justify-content:center;height:100vh;touch-action:none;font-family:'Press Start 2P',monospace}
 canvas{image-rendering:pixelated;max-width:100vw;max-height:100vh;cursor:pointer}
-#rotate-msg{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:#0a0520;z-index:9999;
-  flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:'Press Start 2P',monospace;text-align:center;padding:20px}
-#rotate-msg .phone{font-size:48px;animation:rotatePhone 2s ease-in-out infinite}
-@keyframes rotatePhone{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
+
 </style>
 </head>
 <body>
-<div id="rotate-msg">
-  <div class="phone">📱</div>
-  <p style="font-size:10px;margin-top:20px;line-height:1.8">Для лучшего опыта<br>поверни горизонтально! 🔄</p>
-  <button id="play-btn" style="margin-top:25px;padding:15px 30px;background:#ff4466;color:#fff;border:none;border-radius:8px;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;-webkit-tap-highlight-color:transparent">▶ ИГРАТЬ</button>
-</div>
 <script>
+// Force landscape on mobile portrait by rotating canvas with CSS
 (function(){
   const isPhone=/iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
-  const rm=document.getElementById('rotate-msg');
-  const btn=document.getElementById('play-btn');
+  if(!isPhone) return;
   
-  function dismiss(){
-    rm.dataset.dismissed='1';
-    rm.style.display='none';
-  }
-  
-  function check(){
-    if(rm.dataset.dismissed) return;
-    if(!isPhone){rm.style.display='none';return;}
+  function adjustForPortrait(){
+    const c=document.getElementById('c');
+    if(!c) return;
     const isPortrait=window.innerHeight>window.innerWidth;
-    rm.style.display=isPortrait?'flex':'none';
+    if(isPortrait){
+      const vw=window.innerWidth;
+      const vh=window.innerHeight;
+      c.style.transform='rotate(90deg)';
+      c.style.transformOrigin='center center';
+      c.style.width=vh+'px';
+      c.style.height=vw+'px';
+      c.style.maxWidth=vh+'px';
+      c.style.maxHeight=vw+'px';
+    }else{
+      c.style.transform='none';
+      c.style.width='';c.style.height='';
+      c.style.maxWidth='100vw';c.style.maxHeight='100vh';
+    }
   }
   
-  // Multiple event listeners for reliability on iOS
-  btn.addEventListener('click',dismiss);
-  btn.addEventListener('touchstart',function(e){e.preventDefault();dismiss();},{passive:false});
-  window.addEventListener('resize',check);
-  window.addEventListener('orientationchange',function(){setTimeout(check,300);});
-  // Also poll every second for first 10 seconds (iOS sometimes delays events)
-  let polls=0;
-  const pollInterval=setInterval(function(){check();polls++;if(polls>10)clearInterval(pollInterval);},1000);
-  check();
+  window.addEventListener('resize',adjustForPortrait);
+  window.addEventListener('orientationchange',function(){setTimeout(adjustForPortrait,300);});
+  setTimeout(adjustForPortrait,100);
+  setTimeout(adjustForPortrait,500);
+  setTimeout(adjustForPortrait,1000);
 })();
 </script>
 <canvas id="c"></canvas>
@@ -261,15 +257,15 @@ function getLevelItems(lvl){
     for(let i=0;i<6;i++) items.push({type:'pomegranate',x:1300+i*150,y:220+Math.sin(i)*15,collected:false});
     for(let i=0;i<6;i++) items.push({type:'heart',x:2200+i*100,y:210+Math.sin(i)*15,collected:false});
   } else if(lvl===2){ // Uruguay - many hearts, LOW (jump reach), full level
-    for(let i=0;i<20;i++) items.push({type:'heart',x:180+i*130,y:200+Math.sin(i*0.8)*15,collected:false});
-    items.push({type:'money',x:500,y:200,collected:false});
-    items.push({type:'money',x:1200,y:205,collected:false});
-    items.push({type:'money',x:1900,y:200,collected:false});
-    items.push({type:'badge',x:800,y:195,text:'НОВЫЕ\nДРУЗЬЯ',collected:false});
-    items.push({type:'house',x:1500,y:210,collected:false});
-    items.push({type:'car',x:2000,y:210,collected:false});
+    for(let i=0;i<20;i++) items.push({type:'heart',x:180+i*130,y:235+Math.sin(i*0.8)*10,collected:false});
+    items.push({type:'money',x:500,y:235,collected:false});
+    items.push({type:'money',x:1200,y:235,collected:false});
+    items.push({type:'money',x:1900,y:235,collected:false});
+    items.push({type:'badge',x:800,y:230,text:'НОВЫЕ\nДРУЗЬЯ',collected:false});
+    items.push({type:'house',x:1500,y:240,collected:false});
+    items.push({type:'car',x:2000,y:240,collected:false});
     // More hearts after car
-    for(let i=0;i<8;i++) items.push({type:'heart',x:2100+i*90,y:200+Math.sin(i)*15,collected:false});
+    for(let i=0;i<8;i++) items.push({type:'heart',x:2100+i*90,y:235+Math.sin(i)*10,collected:false});
   }
   return items;
 }
@@ -871,6 +867,19 @@ function updateAndDrawLevel(dt){
     }
   }
 
+  // Auto-collect items that scrolled off-screen (prevent permanent miss)
+  if(game.level===2){
+    for(const item of levelItems){
+      if(item.collected) continue;
+      const ix=item.x-game.scrollX;
+      if(ix<-80){
+        item.collected=true;
+        levelCollected++;
+        game.totalItemsCollected++;
+      }
+    }
+  }
+
   // Collection animations
   for(let i=collectAnim.length-1;i>=0;i--){
     const a=collectAnim[i];
@@ -915,6 +924,7 @@ function updateAndDrawLevel(dt){
           // Spawn celebration hearts after tank death!
           for(let i=0;i<8;i++){
             levelItems.push({type:'heart',x:game.scrollX+100+i*50,y:200+Math.sin(i)*20,collected:false});
+            levelTotal++;
           }
           startShake(1.0);
           // EXPLOSION
@@ -990,8 +1000,11 @@ function updateAndDrawLevel(dt){
     ctx.fillText(Math.floor(game.bigHeartProgress*100)+'%',440,80);
   }
 
-  // Trigger center animation on Uruguay when heart is big enough
+  // Pause scrolling when all Uruguay items collected but Oliver not yet born
   const allUruguayCollected=levelItems.filter(i=>!i.collected).length===0;
+  if(game.level===2 && allUruguayCollected && !game.oliverBorn){
+    game.scrollSpeed=0;
+  }
   const anyVisibleOnScreen=levelItems.some(i=>!i.collected && (i.x-game.scrollX)>-50 && (i.x-game.scrollX)<530);
   if(game.level===2 && allUruguayCollected && !anyVisibleOnScreen && !game.oliverBorn && !heartCenterAnim.active){
     heartCenterAnim.active=true;
@@ -1145,10 +1158,10 @@ function updateAndDrawLevel(dt){
     if(!game.tankDeathTimer) game.tankDeathTimer=0;
     game.tankDeathTimer+=dt;
   }
-  // Level completion: levels 0,1 = 3 sec after tank death. Level 2 = by distance
+  // Level completion: levels 0,1 = 3 sec after tank death. Level 2 = after Oliver born + distance
   const lvlDone = (game.level<=1) ? 
     (tank && !tank.alive && game.tankDeathTimer>3) :
-    (game.scrollX>=LEVEL_DIST[game.level]);
+    (game.oliverBorn && game.scrollX>=LEVEL_DIST[game.level]);
   if(lvlDone){
     game.tankDeathTimer=0;
     // CELEBRATION before next level! Salute + confetti
