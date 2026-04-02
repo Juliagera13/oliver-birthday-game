@@ -723,7 +723,17 @@ function updateAndDrawLevel(dt){
   if(tank && tank.alive && (game.level===0||game.level===1)){
     const tankScreenX=tank.x-game.scrollX+60;
     // Block scrolling when tank is visible on screen
-    if(tankScreenX<250) game.scrollX=tank.x+60-250;
+    if(tankScreenX<250){
+      game.scrollX=tank.x+60-250;
+      // Auto-collect any remaining items (can't jump while in fireball mode)
+      for(const item of levelItems){
+        if(!item.collected){
+          item.collected=true;
+          levelCollected++;
+          game.totalItemsCollected++;
+        }
+      }
+    }
   }
 
   // Background
