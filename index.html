@@ -1279,87 +1279,55 @@ function drawFinale(dt){
   const shownText=LETTER_TEXT.substring(0,charCount);
   const letterDone=charCount>=LETTER_TEXT.length;
   
-  // Letter background
-  ctx.fillStyle='rgba(10,5,30,0.9)';
-  roundRect(15,5,450,GROUND_Y-10,8);
-  ctx.strokeStyle='#ffd700';ctx.lineWidth=2;
-  ctx.strokeRect(17,7,446,GROUND_Y-14);
+  // Letter — ALL text on one screen, no scrolling needed
+  ctx.fillStyle='rgba(10,5,30,0.92)';
+  roundRect(10,3,460,GROUND_Y-6,6);
+  ctx.strokeStyle='#ffd700';ctx.lineWidth=1.5;
+  ctx.strokeRect(12,5,456,GROUND_Y-10);
 
-  // Draw text - use sans-serif for readability, larger
-  ctx.fillStyle='#fff';ctx.font='bold 10px sans-serif';ctx.textAlign='left';
-  const maxW=420;
-  const lineH=14;
+  // Split text into lines, fit everything on screen
+  ctx.fillStyle='#fff';ctx.textAlign='left';
+  const paragraphs=LETTER_TEXT.split('\n').filter(p=>p.trim());
+  const totalParas=paragraphs.length;
+  // Calculate font size to fit all text
+  const availH=GROUND_Y-25;
+  const fontSize=Math.min(9, Math.floor(availH/(totalParas*1.4)));
+  ctx.font=fontSize+'px sans-serif';
+  const lineH=fontSize+3;
   
-  // Pre-calculate all lines
-  const allWords=shownText.split(' ');
-  const lines=[];
-  let curLine='';
-  for(let w=0;w<allWords.length;w++){
-    const word=allWords[w];
-    if(word.includes('\n')){
-      const parts=word.split('\n');
-      for(let p=0;p<parts.length;p++){
-        if(p>0){lines.push(curLine);lines.push('');curLine='';}
-        const test=curLine+(curLine?' ':'')+parts[p];
-        if(ctx.measureText(test).width>maxW){lines.push(curLine);curLine=parts[p];}
-        else curLine=test;
+  let ty=15;
+  for(let p=0;p<paragraphs.length;p++){
+    const para=paragraphs[p];
+    // Word wrap
+    const words=para.split(' ');
+    let line='';
+    for(let w=0;w<words.length;w++){
+      const test=line+(line?' ':'')+words[w];
+      if(ctx.measureText(test).width>440){
+        if(ty<GROUND_Y-10) ctx.fillText(line,20,ty);
+        ty+=lineH;
+        line=words[w];
+      }else{
+        line=test;
       }
-    }else{
-      const test=curLine+(curLine?' ':'')+word;
-      if(ctx.measureText(test).width>maxW){lines.push(curLine);curLine=word;}
-      else curLine=test;
     }
+    if(line && ty<GROUND_Y-10) ctx.fillText(line,20,ty);
+    ty+=lineH+2; // paragraph spacing
   }
-  if(curLine) lines.push(curLine);
-  
-  // Manual scroll only - tap to scroll down
-  const visibleLines=Math.floor((GROUND_Y-40)/lineH);
-  const maxScroll=Math.max(0,(lines.length-visibleLines+2)*lineH);
-  if(game.letterScroll===undefined) game.letterScroll=0;
-  // Smooth ease to target scroll position
-  if(!game.letterScrollTarget) game.letterScrollTarget=0;
-  game.letterScroll+=(game.letterScrollTarget-game.letterScroll)*0.15;
-  if(game.letterScrollTarget<0) game.letterScrollTarget=0;
-  if(game.letterScrollTarget>maxScroll) game.letterScrollTarget=maxScroll;
-  if(game.letterScroll<0) game.letterScroll=0;
-  if(game.letterScroll>maxScroll) game.letterScroll=maxScroll;
-  
-  // Draw lines
-  ctx.save();
-  ctx.beginPath();ctx.rect(15,15,450,GROUND_Y-30);ctx.clip();
-  for(let i=0;i<lines.length;i++){
-    const drawY=25+i*lineH-game.letterScroll;
-    if(drawY>10 && drawY<GROUND_Y-15) ctx.fillText(lines[i],30,drawY);
-  }
-  ctx.restore();
   ctx.textAlign='center';
 
-  // Show ПОЗДРАВЛЯЮ when scrolled past halfway
-  const pastHalf=game.letterScrollTarget>maxScroll*0.5;
-  if(pastHalf){
-    if(!game.celebrationStarted){
-      game.celebrationStarted=true;
-      game.celebrationTimer=0;
+  // Confetti around characters
+  if(!game.confettiTimer) game.confettiTimer=0;
+  game.confettiTimer+=dt;
+  if(game.confettiTimer>=3){
+    game.confettiTimer=0;
+    for(let c=0;c<4;c++){
+      spawnParticles(100+Math.random()*280,GROUND_Y-20-Math.random()*20,'#ff2255',2,3);
+      spawnParticles(100+Math.random()*280,GROUND_Y-20-Math.random()*20,'#ffdd44',2,2);
     }
-    game.celebrationTimer+=dt;
-    
-    // Confetti + sound — ONLY in ground area (below letter box)
-    if(game.celebrationTimer>1){
-      if(!game.confettiTimer) game.confettiTimer=0;
-      game.confettiTimer+=dt;
-      if(game.confettiTimer>=3){
-        game.confettiTimer=0;
-        // Sparkles only around characters (below letter)
-        for(let c=0;c<6;c++){
-          spawnParticles(100+Math.random()*280,GROUND_Y-20-Math.random()*30,'#ff2255',2,3);
-          spawnParticles(100+Math.random()*280,GROUND_Y-20-Math.random()*30,'#ffdd44',2,3);
-          spawnParticles(100+Math.random()*280,GROUND_Y-20-Math.random()*30,'#44ddff',2,2);
-        }
-        if(audioCtx){
-          playNote(523,0,0.1,'square',0.05);playNote(659,0.1,0.1,'square',0.05);
-          playNote(784,0.2,0.1,'square',0.05);playNote(1047,0.3,0.2,'square',0.06);
-        }
-      }
+    if(audioCtx){
+      playNote(523,0,0.1,'sine',0.04);playNote(659,0.1,0.1,'sine',0.04);
+      playNote(784,0.2,0.15,'sine',0.05);
     }
   }
 
