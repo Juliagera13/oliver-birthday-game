@@ -22,31 +22,33 @@ canvas{image-rendering:pixelated;max-width:100vw;max-height:100vh;cursor:pointer
   <button id="play-btn" style="margin-top:25px;padding:15px 30px;background:#ff4466;color:#fff;border:none;border-radius:8px;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;-webkit-tap-highlight-color:transparent">▶ ИГРАТЬ</button>
 </div>
 <script>
-// Show rotate message on mobile portrait
-function checkOrientation(){
-  const isPhone=/iPhone|Android.*Mobile/i.test(navigator.userAgent);
-  const isPortrait=window.innerHeight>window.innerWidth;
+(function(){
+  const isPhone=/iPhone|Android.*Mobile|iPod/i.test(navigator.userAgent);
   const rm=document.getElementById('rotate-msg');
-  if(isPhone && isPortrait && !rm.dataset.dismissed){
-    rm.style.display='flex';
-  }else{
+  const btn=document.getElementById('play-btn');
+  
+  function dismiss(){
+    rm.dataset.dismissed='1';
     rm.style.display='none';
   }
-}
-document.getElementById('play-btn').addEventListener('click',function(){
-  const rm=document.getElementById('rotate-msg');
-  rm.dataset.dismissed='1';
-  rm.style.display='none';
-});
-document.getElementById('play-btn').addEventListener('touchend',function(e){
-  e.preventDefault();
-  const rm=document.getElementById('rotate-msg');
-  rm.dataset.dismissed='1';
-  rm.style.display='none';
-});
-window.addEventListener('resize',checkOrientation);
-window.addEventListener('orientationchange',checkOrientation);
-checkOrientation();
+  
+  function check(){
+    if(rm.dataset.dismissed) return;
+    if(!isPhone){rm.style.display='none';return;}
+    const isPortrait=window.innerHeight>window.innerWidth;
+    rm.style.display=isPortrait?'flex':'none';
+  }
+  
+  // Multiple event listeners for reliability on iOS
+  btn.addEventListener('click',dismiss);
+  btn.addEventListener('touchstart',function(e){e.preventDefault();dismiss();},{passive:false});
+  window.addEventListener('resize',check);
+  window.addEventListener('orientationchange',function(){setTimeout(check,300);});
+  // Also poll every second for first 10 seconds (iOS sometimes delays events)
+  let polls=0;
+  const pollInterval=setInterval(function(){check();polls++;if(polls>10)clearInterval(pollInterval);},1000);
+  check();
+})();
 </script>
 <canvas id="c"></canvas>
 <script>
