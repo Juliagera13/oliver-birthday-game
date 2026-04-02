@@ -13,23 +13,41 @@ canvas{image-rendering:pixelated;max-width:100vw;max-height:100vh;cursor:pointer
   flex-direction:column;align-items:center;justify-content:center;color:#fff;font-family:'Press Start 2P',monospace;text-align:center;padding:20px}
 #rotate-msg .phone{font-size:48px;animation:rotatePhone 2s ease-in-out infinite}
 @keyframes rotatePhone{0%,100%{transform:rotate(0deg)}50%{transform:rotate(90deg)}}
-@media(orientation:portrait) and (max-width:768px){
-  #rotate-msg{display:flex!important}
-  canvas{display:none!important}
-}
-@media(orientation:landscape),screen and (min-width:769px){
-  #rotate-msg{display:none!important}
-  canvas{display:block!important}
-}
 </style>
 </head>
 <body>
 <div id="rotate-msg">
   <div class="phone">📱</div>
-  <p style="font-size:10px;margin-top:20px;line-height:1.8">Переверни телефон<br>горизонтально! 🔄</p>
-  <p style="font-size:7px;margin-top:15px;color:#ff88aa">для лучшего игрового опыта</p>
-  <button onclick="document.getElementById('rotate-msg').style.display='none';document.getElementById('c').style.display='block'" style="margin-top:25px;padding:12px 24px;background:#ff4466;color:#fff;border:none;border-radius:8px;font-family:'Press Start 2P',monospace;font-size:8px;cursor:pointer">Играть так ▶</button>
+  <p style="font-size:10px;margin-top:20px;line-height:1.8">Для лучшего опыта<br>поверни горизонтально! 🔄</p>
+  <button id="play-btn" style="margin-top:25px;padding:15px 30px;background:#ff4466;color:#fff;border:none;border-radius:8px;font-family:'Press Start 2P',monospace;font-size:10px;cursor:pointer;-webkit-tap-highlight-color:transparent">▶ ИГРАТЬ</button>
 </div>
+<script>
+// Show rotate message on mobile portrait
+function checkOrientation(){
+  const isMobile=window.innerWidth<768;
+  const isPortrait=window.innerHeight>window.innerWidth;
+  const rm=document.getElementById('rotate-msg');
+  if(isMobile && isPortrait && !rm.dataset.dismissed){
+    rm.style.display='flex';
+  }else{
+    rm.style.display='none';
+  }
+}
+document.getElementById('play-btn').addEventListener('click',function(){
+  const rm=document.getElementById('rotate-msg');
+  rm.dataset.dismissed='1';
+  rm.style.display='none';
+});
+document.getElementById('play-btn').addEventListener('touchend',function(e){
+  e.preventDefault();
+  const rm=document.getElementById('rotate-msg');
+  rm.dataset.dismissed='1';
+  rm.style.display='none';
+});
+window.addEventListener('resize',checkOrientation);
+window.addEventListener('orientationchange',checkOrientation);
+checkOrientation();
+</script>
 <canvas id="c"></canvas>
 <script>
 const ASSETS={
