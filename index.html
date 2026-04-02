@@ -245,7 +245,9 @@ function getLevelItems(lvl){
     items.push({type:'money',x:1900,y:220,collected:false});
     items.push({type:'badge',x:800,y:210,text:'НОВЫЕ\nДРУЗЬЯ',collected:false});
     items.push({type:'house',x:1500,y:230,collected:false});
-    items.push({type:'car',x:2200,y:230,collected:false});
+    items.push({type:'car',x:2000,y:230,collected:false});
+    // More hearts after car, before big heart moment
+    for(let i=0;i<6;i++) items.push({type:'heart',x:2200+i*100,y:220+Math.sin(i)*10,collected:false});
   }
   return items;
 }
@@ -953,7 +955,7 @@ function updateAndDrawLevel(dt){
   }
 
   // Trigger center animation on Uruguay when heart is big enough
-  if(game.level===2 && (game.bigHeartProgress>=0.8 || game.scrollX > LEVEL_DIST[2]*0.85) && !game.oliverBorn && !heartCenterAnim.active){
+  if(game.level===2 && game.scrollX > LEVEL_DIST[2]*0.93 && !game.oliverBorn && !heartCenterAnim.active){
     heartCenterAnim.active=true;
     heartCenterAnim.timer=0;
     heartCenterAnim.phase='moving';
