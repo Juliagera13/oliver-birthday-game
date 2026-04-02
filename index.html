@@ -314,10 +314,8 @@ function onInput(){
     return;
   }
   if(game.state==='finale'){
-    // tap to speed up letter or show all
-    if(letterChars<LETTER_TEXT.length){
-      letterChars=LETTER_TEXT.length; // show all text instantly on tap
-    }
+    // tap to scroll down
+    game.letterScroll+=40;
     return;
   }
   if(game.state==='airplane'){
@@ -1250,15 +1248,17 @@ function drawFinale(dt){
   // Finale music (gentle & beautiful)
   if(game.finaleStep===0){
     game.finaleStep=1;
-    letterChars=LETTER_TEXT.length; // Show ALL text immediately
+    letterChars=LETTER_TEXT.length; // Show ALL text at once
+    game.letterScroll=0; // Start at TOP
+    game.confettiTimer=0;
+    game.celebrationStarted=false;
     if(audioCtx){
       const mel=[[N.C4,0,1.5],[N.E4,1.5,1],[N.G4,2.5,1],[N.C5,3.5,2],[N.B4,5.5,0.5],[N.A4,6,0.5],[N.G4,6.5,1.5],[N.E4,8,1],[N.C4,9,2]];
-      playMelodyLoop(mel,50,'sine'); // slow, sine = soft and beautiful
+      playMelodyLoop(mel,50,'sine');
     }
   }
 
-  // Text shown immediately
-  if(letterChars<LETTER_TEXT.length) letterChars+=dt*50;
+  letterChars=LETTER_TEXT.length;
   const charCount=Math.floor(letterChars);
   const shownText=LETTER_TEXT.substring(0,charCount);
   const letterDone=charCount>=LETTER_TEXT.length;
@@ -1296,11 +1296,12 @@ function drawFinale(dt){
   }
   if(curLine) lines.push(curLine);
   
-  // Smooth scroll - only when text overflows visible area
+  // Auto-scroll slowly from top
   const visibleLines=Math.floor((GROUND_Y-40)/lineH);
-  const scrollTarget=Math.max(0,(lines.length-visibleLines)*lineH);
-  if(!game.letterScroll) game.letterScroll=0;
-  game.letterScroll+=(scrollTarget-game.letterScroll)*0.05; // smooth ease
+  const maxScroll=Math.max(0,(lines.length-visibleLines+2)*lineH);
+  if(game.letterScroll===undefined) game.letterScroll=0;
+  game.letterScroll+=dt*12; // slow auto-scroll ~12px/sec
+  if(game.letterScroll>maxScroll) game.letterScroll=maxScroll;
   
   // Draw lines
   ctx.save();
@@ -1312,8 +1313,9 @@ function drawFinale(dt){
   ctx.restore();
   ctx.textAlign='center';
 
-  // After letter is done - show ПОЗДРАВЛЯЮ and celebration!
-  if(letterDone){
+  // Show ПОЗДРАВЛЯЮ when scrolled past halfway
+  const pastHalf=game.letterScroll>maxScroll*0.5;
+  if(pastHalf){
     if(!game.celebrationStarted){
       game.celebrationStarted=true;
       game.celebrationTimer=0;
@@ -1321,13 +1323,30 @@ function drawFinale(dt){
     game.celebrationTimer+=dt;
     
     // Big "ПОЗДРАВЛЯЮ!!!" text
-    if(game.celebrationTimer>2){
+    if(game.celebrationTimer>1){
       const pulse=1+Math.sin(game.time*5)*0.1;
       ctx.save();ctx.translate(240,GROUND_Y-30);ctx.scale(pulse,pulse);
       ctx.fillStyle='#ffd700';ctx.font='bold 14px "Press Start 2P"';ctx.textAlign='center';
       ctx.fillText('ПОЗДРАВЛЯЮ!!! 🎉',0,0);
       ctx.restore();
       
+      // Confetti burst every 3 seconds with "yay!" sound
+      if(!game.confettiTimer) game.confettiTimer=0;
+      game.confettiTimer+=dt;
+      if(game.confettiTimer>=3){
+        game.confettiTimer=0;
+        for(let c=0;c<8;c++){
+          spawnParticles(Math.random()*480,Math.random()*150,'#ff2255',3,5);
+          spawnParticles(Math.random()*480,Math.random()*150,'#ffdd44',3,4);
+          spawnParticles(Math.random()*480,Math.random()*150,'#44ddff',2,4);
+          spawnParticles(Math.random()*480,Math.random()*150,'#44ff44',2,3);
+        }
+        // "Yay!" sound - ascending cheerful notes
+        if(audioCtx){
+          playNote(523,0,0.1,'square',0.05);playNote(659,0.1,0.1,'square',0.05);
+          playNote(784,0.2,0.1,'square',0.05);playNote(1047,0.3,0.2,'square',0.06);
+        }
+      }
       // Continuous fireworks + hearts - LOTS!
       if(Math.random()<0.35){
         const fx=50+Math.random()*380,fy=20+Math.random()*100;
@@ -1359,4 +1378,3 @@ function startGame(){
 </script>
 </body>
 </html>
-<!-- Thu Apr  2 14:52:34 EEST 2026 -->
